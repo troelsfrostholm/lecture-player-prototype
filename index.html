@@ -379,10 +379,18 @@
       var miniature;
 
       function onYouTubeIframeAPIReady() {
+        href = window.location.href;
+        if (href.includes("?")) {
+          id = window.location.href.split('?').pop()  
+        } else {
+          console.log("playing instead...");
+          id = "kn1gcjuhlhg";
+        }
+
         player = new YT.Player('player', {
           height: '390',
           width: '640',
-          videoId: 'M7lc1UVf-VE',
+          videoId: id,
           playerVars: {
             'autoplay' : 0,
             'controls' : 0,
@@ -397,7 +405,7 @@
         miniature = new YT.Player('miniature', {
           height: '195',
           width: '320',
-          videoId: 'M7lc1UVf-VE',
+          videoId: id,
           playerVars: {
             'autoplay' : 0,
             'controls' : 0,
@@ -427,7 +435,7 @@
       var miniatureDone = false;
       function onMiniatureChangedState(event) {
         if (event.data == YT.PlayerState.PLAYING && !miniatureDone) {
-          setTimeout(pauseMiniature, 50);
+          setTimeout(pauseMiniature, 200);
           miniatureDone = true;
         }
       }
@@ -435,7 +443,7 @@
       var playerDone = false;
       function onPlayerChangedState(event) {
         if (event.data == YT.PlayerState.PLAYING && !playerDone) {
-          setTimeout(pausePlayer, 50);
+          setTimeout(pausePlayer, 200);
           playerDone = true;
         }
       }
