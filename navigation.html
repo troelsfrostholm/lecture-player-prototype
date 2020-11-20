@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+
+      #player {
+        float:left;
+        margin: 0em;
+      }
+
+      #preview {
+        float:left;
+        margin: 1em;
+      }
+
+      #navigation {
+        float: left;
+      }
+
+      img.large {
+        width: 500px;
+        height: 300px;
+      }
+
+      img.thumb {
+        height: 70px;
+        width: 120px;
+        cursor: pointer;
+      }
+    </style>
+    <script>
+      var nFrames = 220;
+
+      var populateSledge = function(sledgeId, nPics, iPic) {
+        sledge = document.getElementById("image-sledge-" + String(sledgeId));
+
+        nDisplay = nFrames / Math.pow(nPics, sledgeId - 1);
+        step = nDisplay / nPics;
+
+        sledge.innerHTML = "";
+        for (i=iPic; i<=iPic + nDisplay - 1; i+=step) {
+          i_int = Math.round(i);
+          i_str = ("00" + i_int).slice (-3);
+          html = "<img class='thumb' src='../lecture-player-prototype/frames/video_" + i_str + ".png' onmouseover='mouseOverImage(" + sledgeId + ", " + i_int + ");' onclick='clickImage(" + i_int + ");'>";
+          sledge.innerHTML += html;
+        }
+      }
+
+      var mouseOverImage = function(sledgeId, i) {
+        i_str = ("00" + i).slice(-3);
+        src = "../lecture-player-prototype/frames/video_" + i_str + ".png";
+        previewImage = document.getElementById("preview-image");
+        previewImage.src = src;
+        if (sledgeId < 2) {
+          populateSledge(sledgeId + 1, 10, i);
+        }
+      }
+
+      var clickImage = function(i) {
+        v = document.getElementById("video");
+        v.currentTime = i - 2;
+      }
+
+      var load = function() {
+        populateSledge(1, 10, 1);
+      }
+    </script>
+  </head>
+  <body onload="load();">
+    <div id="container">
+      <div id="player">
+        <video id="video" width="640" height="380" autoplay>
+          <source src="frames/videoplayback.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+      <div id="preview">
+        <div id="preview">
+          <img id="preview-image" class="large" src="../lecture-player-prototype/frames/video_001.png">
+        </div>
+      </div>
+    </div>
+    <div id="navigation">
+      <div id="image-sledge-1">
+      </div>
+      <div id="image-sledge-2">
+      </div>
+    </div>
+    <script>
+      
+    </script>
+  </body>
+</html>
