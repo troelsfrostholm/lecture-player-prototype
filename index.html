@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Lecture Player prototype</title>
+    <script>
+      var progressUpdateTime = 100;
+      var repeatPollTime = 100;
+      var time;
+      var time_delta;
+      var repeat = false;
+      var repeat_from = 0.0;
+      var repeat_to;
+
+      var timeline_mouse_move = function(e) {
+
+        var rect = e.currentTarget.getBoundingClientRect();
+        var x = e.clientX - rect.left; //x position within the element.
+        var y = e.clientY - rect.top;  //y position within the element.
+        duration = miniature.getDuration();
+        time = x/rect.width*duration;
+        
+        miniature.seekTo(time);
+        miniatureTimeText = document.getElementById("miniature-time-text");
+        miniatureTimeText.innerHTML = time.toFixed(1) + " / " + duration.toFixed(1);
+        
+        marker = document.getElementById("marker");
+        marker.style.left = (x-5).toFixed(0) + "px";
+
+        leftline = document.getElementById("left-line");
+        rightline = document.getElementById("right-line")
+
+        leftline.setAttribute("x1", x - 10);
+        rightline.setAttribute("x1", x + 10);
+      }
+
+      var timeline_click = function(e) {
+        seekToTime();
+
+        document.getElementById("marker").style.visibility = "hidden";
+        document.getElementById("blowup").style.visibility = "hidden";
+        document.getElementById("miniature-section").style.visibility = "hidden";
+      }
+
+      var timeline_mouse_enter = function(e) {
+        document.getElementById("marker").style.visibility = "visible";
+        document.getElementById("blowup").style.visibility = "visible";
+        document.getElementById("miniature-section").style.visibility = "visible";
+      }
+
+      var timeline_area_mouse_leave = function(e) {
+        document.getElementById("marker").style.visibility = "hidden";
+        document.getElementById("blowup").style.visibility = "hidden";
+        document.getElementById("miniature-section").style.visibility = "hidden";
+      }
+
+      var timeline2_mouse_move = function(e) {
+        time_window_width = 10.0;
+
+        var rect = e.currentTarget.getBoundingClientRect();
+        var x = e.clientX - rect.left; //x position within the element.
+        var y = e.clientY - rect.top;  //y position within the element.
+
+        time_delta = (x/rect.width - 0.5)*time_window_width;
+        new_time = time + time_delta;
+
+        miniature.seekTo(new_time);
+        miniatureTimeText = document.getElementById("miniature-time-text");
+        miniatureTimeText.innerHTML = new_time.toFixed(1) + " / " + duration.toFixed(1);
+
+        marker = document.getElementById("marker-2");
+        marker.style.left = (x+5).toFixed(0) + "px";
+      }
+
+      var timeline2_mouse_enter = function(e) {
+        document.getElementById("marker-2").style.visibility = "visible";
+      }
+
+      var timeline2_mouse_leave = function(e) {
+        document.getElementById("marker-2").style.visibility = "hidden";
+      }
+
+      var timeline2_click = function(e) {
+        seekToTime();
+        
+        document.getElementById("marker-2").style.visibility = "hidden";
+        document.getElementById("marker").style.visibility = "hidden";
+        document.getElementById("blowup").style.visibility = "hidden";
+        document.getElementById("miniature-section").style.visibility = "hidden";
+      }
+
+      var seekToTime = function() {
+        var cued = false;
+        if (player.getPlayerState() == YT.PlayerState.CUED) {
+          cued = true;
+        }
+        player.seekTo(time);
+        if (cued) {
+          player.playVideo();
+          setTimeout(function() {
+            player.pauseVideo();  
+          }, 1000);   
+        }
+      }
+
+      var playButtonClicked = function(e) {
+        e.currentTarget.style.display = "none";
+        document.getElementById("pause-button").style.display = "inline";
+        player.playVideo();
+      }
+
+      var pauseButtonClicked = function(e) {
+        e.currentTarget.style.display = "none";
+        document.getElementById("play-button").style.display = "inline";
+        player.pauseVideo();
+      }
+
+      var startButtonClicked = function(e) {
+        player.seekTo(repeat_from);
+      }
+
+      var endButtonClicked = function(e) {
+        player.seekTo(repeat_to);
+      }
+
+      var repeatButtonClicked = function(e) {
+        repeat = !repeat;
+
+        target = e.currentTarget;
+        if (repeat) {
+          target.classList.add('depressed')
+          setTimeout(pollForRepeat, repeatPollTime)
+        }  else {
+          target.classList.remove('depressed')
+        }
+      }
+
+      var repeatFromButtonClicked = function(e) {
+        time = player.getCurrentTime();
+
+        if (time <= repeat_to) {
+          repeat_from = time;
+        }
+
+        timeline = document.getElementById("timeline");
+        rect = timeline.getBoundingClientRect();
+
+        pos = repeat_from/player.getDuration() * rect.width;
+        from_marker = document.getElementById("from-marker");
+        from_marker.style.left = pos.toFixed(0) + "px";
+
+        timeline_active = document.getElementById("timeline-active");
+        to_marker = document.getElementById("to-marker");
+        timeline_active.style.left = String(pos + 5) + "px";
+        w = parseInt(to_marker.style.left) - pos;
+        timeline_active.style.width = String(w) + "px";
+      }
+
+      var repeatToButtonClicked = function(e) {
+        time = player.getCurrentTime();
+
+        if (time >= repeat_from) {
+          repeat_to = time;
+        }
+        
+        timeline = document.getElementById("timeline");
+        rect = timeline.getBoundingClientRect();
+
+        pos = repeat_to/player.getDuration() * rect.width;
+        to_marker = document.getElementById("to-marker");
+        to_marker.style.left = pos.toFixed(0) + "px";
+
+        timeline_active = document.getElementById("timeline-active");
+        from_marker = document.getElementById("from-marker");
+        w = parseInt(to_marker.style.left) - parseInt(from_marker.style.left);
+        timeline_active.style.width = String(w) + "px";
+      }
+
+      function load() {
+         document.getElementById("timeline").addEventListener('mousemove', function(e) {
+          timeline_mouse_move(e);
+        }, false);
+
+         document.getElementById("timeline").addEventListener('click', function(e) {
+          timeline_click(e);
+        }, false);
+
+         document.getElementById("timeline").addEventListener('mouseenter', function(e) {
+          timeline_mouse_enter(e);
+        }, false);
+
+         document.getElementById("timeline-area").addEventListener('mouseleave', function(e) {
+          timeline_area_mouse_leave(e);
+        }, false);
+
+         document.getElementById("timeline-2").addEventListener('mousemove', function(e) {
+          timeline2_mouse_move(e);
+        }, false);
+
+        document.getElementById("timeline-2").addEventListener('click', function(e) {
+          timeline2_click(e);
+        }, false);
+
+        document.getElementById("timeline-2").addEventListener('mouseenter', function(e) {
+          timeline2_mouse_enter(e);
+        }, false);
+
+        document.getElementById("timeline-2").addEventListener('mouseleave', function(e) {
+          timeline2_mouse_leave(e);
+        }, false);
+
+        document.getElementById("play-button").addEventListener('click', function(e) {
+          playButtonClicked(e);
+        }, false);
+
+        document.getElementById("pause-button").addEventListener('click', function(e) {
+          pauseButtonClicked(e);
+        }, false);
+
+        document.getElementById("start-button").addEventListener('click', function(e) {
+          startButtonClicked(e);
+        }, false);
+
+        document.getElementById("end-button").addEventListener('click', function(e) {
+          endButtonClicked(e);
+        }, false);
+
+        document.getElementById("repeat-button").addEventListener('click', function(e) {
+          repeatButtonClicked(e);
+        }, false);
+
+        document.getElementById("repeat-from-button").addEventListener('click', function(e) {
+          repeatFromButtonClicked(e);
+        }, false);
+
+        document.getElementById("repeat-to-button").addEventListener('click', function(e) {
+          repeatToButtonClicked(e);
+        }, false);
+      }
+    </script>
+
+    <style>
+      #miniature {
+        margin: 0 auto;
+        display: block;
+      }
+
+      #marker:after {
+        content:"";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        border-left: 1px solid #000000;
+        transform: translate(-50%);
+      }
+
+      #blowup {
+        visibility: hidden;
+        background-color: white;
+      }
+
+      #miniature-section {
+        visibility: hidden;
+      }
+
+      #marker {
+        visibility: hidden;
+      }
+
+      #marker-2 {
+        visibility: hidden;
+      }
+
+      .repeat-marker {
+        width: 0px; 
+        height: 12px;
+        transform: translate(5px, -1px);
+        border-left: 3px solid darkgreen;
+        position: absolute;
+      }
+
+      img.button {
+        width: 20px; 
+        height: 20px;
+        margin-top: 2px;
+      }
+
+      #pause-button {
+        display: none;
+      }
+
+      button {
+        width: 50px;
+        background-color: lightgrey;
+      }
+
+      button.depressed {
+        background-color: lightgreen;
+      }
+
+      #controls {
+        z-index: 0;
+      }
+    </style>
+  </head>
+  <body onload="load()">
+    <!-- 1. The <iframe> (and video player) will replace this <div> tag. -->
+    <div id="player"></div>
+
+    <div id="timeline-area" style="width: 640px;">
+      <div id="timeline" 
+           style="width: 640px; height: 10px; background-color: lightgrey;">
+
+        <div id="timeline-active" 
+           style="width: 640px; height: 10px; background-color: grey; position: absolute;z-index: 1">
+        </div>
+
+        <div id="marker" style="width: 20px; height: 7px; left: 5px; border-color: black; border: solid; position: absolute; z-index: 2">
+        </div>
+
+        <div id="from-marker" class="repeat-marker" style="left:0px; z-index: 3; position: absolute;"></div>
+        <div id="to-marker" class="repeat-marker" style="left: 640px; z-index: 4; position: absolute;"></div>
+
+        <div id="progress"
+           style="width: 1px; height: 10px; background-color: red; z-index: 5; position: absolute;">
+         &nbsp;
+        </div>
+
+        
+      </div>
+
+      <div id="blowup" style="position:absolute; z-index: 1">
+
+        <div id="svg">
+          <svg width="640" height="50">
+            <line id="left-line" x1="0" y1="0" x2="0" y2="50" style="stroke:rgb(0,0,0);stroke-width:2" />
+            <line id="right-line" x1="10" y1="0" x2="640" y2="50" style="stroke:rgb(0,0,0);stroke-width:2" />
+          </svg>
+        </div>
+
+        <div id="timeline-2" 
+             style="width: 640px; height: 20px; background-color: lightgrey;">
+          <div id="marker-2" style="width: 1px; height: 20px; left: 5px; border-color: black; border-right: solid; position:absolute; ">
+          </div>
+
+          &nbsp;
+        </div>
+
+      </div>
+
+      <div id="controls" style="margin-top: 30px; text-align: center; position:absolute; width: 640px;">
+        <button id="start-button" title="To beginning"><img class="button" src="start.svg"></button>
+        <button id="play-button" title="Play"><img class="button" src="play.svg"></button>
+        <button id="pause-button" title="Pause"><img class="button" src="pause.svg"></button>
+        <button  id="end-button" title="To end"><img class="button" src="end.svg"></button>
+        <button  id="repeat-button" title="Repeat"><img class="button" src="repeat.svg"></button>
+        <button  id="repeat-from-button" title="Repeat from here"><img class="button" src="repeat-from.svg"></button>
+        <button  id="repeat-to-button" title="Repeat to here"><img class="button" src="repeat-to.svg"></button>
+      </div>
+
+    </div>
+
+    <div id="miniature-section" style="width:640px; margin-top: 5px; position:inline;">
+        <div id="miniature"></div>
+        <p id="miniature-time-text" style="text-align: center"> 0 / 0 </p>
+      </div>
+
+    <script>
+      // 2. This code loads the IFrame Player API code asynchronously.
+      var tag = document.createElement('script');
+
+      tag.src = "https://www.youtube.com/iframe_api";
+      var firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+      // 3. This function creates an <iframe> (and YouTube player)
+      //    after the API code downloads.
+      var player;
+      var miniature;
+
+      function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+          height: '390',
+          width: '640',
+          videoId: 'M7lc1UVf-VE',
+          playerVars: {
+            'autoplay' : 0,
+            'controls' : 0,
+            'rel' : 0
+          },
+          events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerChangedState
+          }
+        });
+
+        miniature = new YT.Player('miniature', {
+          height: '195',
+          width: '320',
+          videoId: 'M7lc1UVf-VE',
+          playerVars: {
+            'autoplay' : 0,
+            'controls' : 0,
+            'rel' : 0
+          },
+          events: {
+            'onReady': onMiniatureReady,
+            'onStateChange': onMiniatureChangedState
+          }
+        });
+      }
+
+      // 4. The API will call this function when the video player is ready.
+      function onMiniatureReady(event) {
+        event.target.playVideo();
+      }
+
+      function onPlayerReady(event) {
+        setTimeout(updateProgress, progressUpdateTime);
+        console.log(event.target);
+        event.target.playVideo();
+      }
+
+      // 5. The API calls this function when the player's state changes.
+      //    The function indicates that when playing a video (state=1),
+      //    the player should play for six seconds and then stop.
+      var miniatureDone = false;
+      function onMiniatureChangedState(event) {
+        if (event.data == YT.PlayerState.PLAYING && !miniatureDone) {
+          setTimeout(pauseMiniature, 50);
+          miniatureDone = true;
+        }
+      }
+
+      var playerDone = false;
+      function onPlayerChangedState(event) {
+        if (event.data == YT.PlayerState.PLAYING && !playerDone) {
+          setTimeout(pausePlayer, 50);
+          playerDone = true;
+        }
+      }
+
+      function pauseMiniature() {
+        miniature.pauseVideo();
+      }
+
+      function pausePlayer() {
+        player.pauseVideo();
+        repeat_to = player.getDuration();
+      }
+
+      function updateProgress() {
+        progressFraction = player.getCurrentTime() / player.getDuration();
+        timeline_width = parseInt(document.getElementById("timeline").style.width);
+        progress_width = timeline_width*progressFraction;
+        pws = String(progress_width) + "px";
+        document.getElementById("progress").style.width = pws;
+
+        setTimeout(updateProgress, progressUpdateTime)
+      }
+
+      function pollForRepeat() {
+        if (!repeat) {
+          return;
+        }
+        if (player.getCurrentTime() >= repeat_to) {
+          player.seekTo(repeat_from);
+        }
+        setTimeout(pollForRepeat, repeatPollTime);
+      }
+    </script>
+  </body>
+</html>
